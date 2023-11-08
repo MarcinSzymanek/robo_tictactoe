@@ -20,9 +20,6 @@ class ArmController:
     def __init__(self,server_name):
         self.client = actionlib.SimpleActionClient(server_name, FollowJointTrajectoryAction)
 
-        self.robot = moveit_commander.RobotCommander()
-        self.scene = moveit_commander.PlanningSceneInterface()
-        self.move_group = moveit_commander.MoveGroupCommander("ax12_arm")
         self.joint_positions = []
         self.names =["joint1",
 				"joint2",

@@ -10,7 +10,6 @@ class GameSession:
         O = 'O'
 
     def __init__(self):
-        self.board_state = np.ndarray((3, 3), str)
         self.current_player = GameSession.Pieces.X
         
     def start_new(self, player = 1):
