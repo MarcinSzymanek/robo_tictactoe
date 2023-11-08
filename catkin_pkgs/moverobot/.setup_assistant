@@ -1,0 +1,11 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: au_crustcrawler_base
+    relative_path: conf/au_crustcrawler_ax12.urdf
+    xacro_args: ""
+  SRDF:
+    relative_path: config/test_robot.srdf
+  CONFIG:
+    author_name: Marcin Szymanek
+    author_email: marcinwszymanek@gmail.com
+    generated_timestamp: 1699298037
