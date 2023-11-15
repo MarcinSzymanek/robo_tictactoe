@@ -4,6 +4,8 @@ import urllib
 import numpy as np
 import math
 
+RADIUS_THRESH = (15, 30)
+
 def get_from_webcam():
     """
     Fetches an image from the webcam
@@ -27,6 +29,9 @@ def get_from_file(filename):
     return cv2.imread(filename)
 
 
+def get_gray_image(image):
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    return gray_image
 
 def from_pixel_to_cm(image, scale):
 
@@ -149,41 +154,38 @@ def draw_lines(image):
 
 
 def find_white_elements(image):
+    src = np.copy(image)
+    src_gray = get_gray_image(src)
     # Define the lower and upper bounds for white color in BGR
-    lower_white = np.array([230, 230, 230], dtype=np.uint8)
-    upper_white = np.array([255, 255, 255], dtype=np.uint8)
+    lower_white = np.array([100, 140, 160], dtype=np.uint8)
+    upper_white = np.array([240, 240, 240], dtype=np.uint8)
 
     # Create a binary mask for red pixels
-    white_mask = cv2.inRange(image, lower_white, upper_white)
+    white_mask = cv2.inRange(src, lower_white, upper_white)
 
     # Apply the mask to the original image
-    find_white = cv2.bitwise_and(image, image, mask=white_mask)
-
-    white_gray = cv2.cvtColor(find_white, cv2.COLOR_BGR2GRAY)
+    white_elements = cv2.bitwise_and(src, src, mask=white_mask)
 
 
-    _, white_elements = cv2.threshold(white_gray, 210, 255, cv2.THRESH_BINARY)
+    #retval, white_elements = cv2.threshold(src_gray, 170, 255, cv2.THRESH_BINARY)
 
 
     return white_elements
 
-def find_red_elements(image):
-    find_red = 2*image[:,:,2]-image[:,:,1]-image[:,:,0]
-        # Apply a threshold to create a binary mask
-    _, red_elements = cv2.threshold(find_red, 150, 255, cv2.THRESH_BINARY)
 
-    return red_elements
 
-def find_white_circles(binary_image):
-    white_circles = binary_image.copy()
-    kernel =  np.ones((3,3),np.uint8)
-    img_ero = cv2.erode((white_circles*255).astype('uint8'), kernel)
-    img_dil = cv2.dilate((img_ero*255).astype('uint8'), kernel)
-    white_circles = img_dil.copy()
-    white_circles_BGR = cv2.cvtColor(white_circles, cv2.COLOR_GRAY2BGR)
+def find_white_circles(binary_image, radius_threshold):
+
+    src = binary_image.copy()
+    src_gray = get_gray_image(src)
+    #kernel =  np.ones((3,3),np.uint8)
+    #img_ero = cv2.erode((white_circles*255).astype('uint8'), kernel)
+    #img_dil = cv2.dilate((img_ero*255).astype('uint8'), kernel)
+    #white_circles = img_dil.copy()
+    white_circles_BGR = cv2.cvtColor(src_gray, cv2.COLOR_GRAY2BGR)
 
     # contours, hierarchy = cv2.findContours(white_circles, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    _ , contours, hierarchy = cv2.findContours(white_circles, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    _ , contours, hierarchy = cv2.findContours(src_gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     # Iterate through the contours
     for contour in contours:
         # Calculate the center and radius of the circle
@@ -193,9 +195,9 @@ def find_white_circles(binary_image):
 
         # Check for a black hole in the middle
         # Assuming the center pixel represents the hole
-        center_value = white_circles[int(y), int(x)]
+        center_value = src_gray[int(y), int(x)]
 
-        if center_value == 0:  # Assuming black holes have pixel value 0 (adjust if needed)
+        if center_value <= 220 and (radius_threshold[0] < radius < radius_threshold[1]):  # Assuming black holes have pixel value 0 (adjust if needed)
             # Draw the circle on the copy of the input image
             cv2.circle(white_circles_BGR, center, radius, (0, 0, 255), 2)
 
@@ -205,7 +207,7 @@ image = get_from_webcam()
 #image = get_from_file('image.jpeg')
 image_cm = from_pixel_to_cm(image, 8.648)
 white_elements = find_white_elements(image)
-white_circles_BGR = find_white_circles(white_elements)
+#white_circles_BGR = find_white_circles(image, RADIUS_THRESH)
 #AoI_result = find_area_of_interest(image)
 dst, cdst = draw_lines(image)
 #resized_image = resize_image(image)
@@ -214,9 +216,9 @@ print("cm", image_cm)
 #white_elements = find_white_elements(resized_image)
 #yellow_elements = find_yellow_elements(resized_image)
 #red_elements = find_red_elements(resized_image)
-cv2.imshow("Source", white_elements)
-cv2.imshow("Detected Lines (in red) - Standard Hough Line Transform", white_circles_BGR)
-#cv2.imwrite('image.jpeg', cdstP)
+cv2.imshow("Det original billede", image)
+#cv2.imshow("Bolle", white_circles_BGR)
+#cv2.imwrite('image12.jpeg', image)
 #cv2.imshow('black_elements', black_elements)
-#cv2.imshow('white_elements', white_circles)
+cv2.imshow('white_elements', white_elements)
 cv2.waitKey(0)
