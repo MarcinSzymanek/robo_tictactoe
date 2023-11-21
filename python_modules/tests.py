@@ -105,13 +105,28 @@ def process_img(path, black_thresh):
     contour_result = img_contours.copy()
     contour_result = cv2.cvtColor(contour_result, cv2.COLOR_GRAY2BGR)
     i = 0
+
+
+    hough_circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, 30,
+    param1 = 50, param2=30, minRadius = 20, maxRadius=33 )
+    print(hough_circles)
+    print(hough_circles.shape)
+    print(hough_circles[0][0])
+    for circle in hough_circles[0]:
+        print(circle)
+        center = int(circle[0]), int(circle[1])
+        radius = circle[2]
+        if(18 < radius < 40):
+            cv2.circle(contour_result, center, radius, (0, 255, 0), 2)
+
+
     for contour in contours:
         
         print(i)
         i += 1
         arclength = cv2.arcLength(contour, False)
         area = cv2.contourArea(contour)
-        if(area < 200): continue
+        if(area < 180): continue
         # Calculate the center and radius of the circle
         (x, y), radius = cv2.minEnclosingCircle(contour)
         center = (int(x), int(y))
@@ -121,12 +136,16 @@ def process_img(path, black_thresh):
         # Assuming the center pixel represents the hole
         center_value = o2[int(y), int(x)]
         print("arc: ", arclength, ", area: ", area, " convex: ", cv2.isContourConvex(contour))
-        if (0 < arclength < 300) and (18 < radius < 30):  # Assuming black holes have pixel value 0 (adjust if needed)
-            print("Is circle")
-            # Draw the circle on the copy of the input image
-            # cv2.circle(white_circles_BGR, center, radius, (0, 0, 255), 2)
-            cv2.circle(contour_result, center, radius, (0, 0, 255), 2)
-            
+        if (0 < arclength < 300) and (10 < radius < 30):  # Assuming black holes have pixel value 0 (adjust if needed)
+            if center_value == 255:
+                
+                print("Is circle")
+                # Draw the circle on the copy of the input image
+                # cv2.circle(white_circles_BGR, center, radius, (0, 0, 255), 2)
+                cv2.circle(contour_result, center, radius, (0, 0, 255), 2)
+            # else:
+            #     print("cross")
+            #     cv2.circle(contour_result, center, radius, (255, 0, 0), 2)
             # Store circle position
             #circles_pos.append((x, y))
 
