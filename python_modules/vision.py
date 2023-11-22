@@ -44,114 +44,72 @@ def from_pixel_to_cm(image, scale):
 
     return image_cm
 
-def group_lines(lines, rho_threshold=20, theta_threshold=np.pi/180 * 15):
-    # Group lines based on their rho and theta values
-    grouped_lines = []
-    # Fix negative angles
-    num_lines = lines.shape[1]
-    for i in range(0, num_lines):
-        line = lines[0,i,:]
-        rho = line[0]
-        theta = line[1]
-        if rho < 0:
-            rho *= -1.0
-            theta -= np.pi
-            line[0] = rho
-            line[1] = theta
-    for line in lines:
-        found_group = False
-        for group in grouped_lines:
-            if (abs(line[0][0] - group[0][0][0]) < rho_threshold) and (abs(line[0][1] - group[0][0][1]) < theta_threshold):
-                group.append(line)
-                found_group = True
-                break
-
-        if not found_group:
-            grouped_lines.append([line])
-
-    return grouped_lines
-
-
-def average_line(grouped_lines, image):
-    # Calculate the average line for a group of lines
-    slopes = []
-    intercepts = []
-
-    for group in grouped_lines:
-        for line in group:
-            rho, theta = line[0], line[1]
-            a, b = np.cos(theta), np.sin(theta)
-            x0, y0 = a * rho, b * rho
-            slope = -a / b if b != 0 else 1e9 # Avoid division by zero
-            intercept = y0 - slope * x0
-
-            slopes.append(slope)
-            intercepts.append(intercept)
-
-    avg_slope = np.mean(slopes)
-    avg_intercept = np.mean(intercepts)
-
-    # Convert the average slope and intercept back to rho and theta
-    avg_rho = avg_intercept / np.sin(np.arctan(avg_slope))
-    avg_theta = np.arctan(avg_slope)
-
-    # Calculate the line coordinates
-    a_avg, b_avg = np.cos(avg_theta), np.sin(avg_theta)
-    x0_avg, y0_avg = a_avg * avg_rho, b_avg * avg_rho
-
-    # Use np.clip to ensure that coordinates are within the valid range
-    x1 = int(np.clip(x0_avg + 1000 * (-b_avg), 0, image.shape[1] - 1))
-    y1 = int(np.clip(y0_avg + 1000 * (a_avg), 0, image.shape[0] - 1))
-    x2 = int(np.clip(x0_avg - 1000 * (-b_avg), 0, image.shape[1] - 1))
-    y2 = int(np.clip(y0_avg - 1000 * (a_avg), 0, image.shape[0] - 1))
-
-    return (avg_rho, avg_theta), (x1, y1), (x2, y2)
-
-def draw_lines(image):
+def draw_rectangle(image,min_height,max_height,min_width,max_width):
     # Change from BGR to gray
     src = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     # Change from gray to BGR
-    dst = cv2.cvtColor(src, cv2.COLOR_GRAY2BGR)
-    cdst = np.copy(dst)
+    rectangle = cv2.cvtColor(src, cv2.COLOR_GRAY2BGR)
+    edge_image = cv2.Canny(rectangle, threshold1=50, threshold2=255)
+    _, contours, _ = cv2.findContours(edge_image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    bounding_boxes = []
+    for contour in contours:
+        rect = cv2.minAreaRect(contour) 
+        box = cv2.boxPoints(rect) 
+        box = np.int0(box)
+        if min_width < rect[1][0] < max_width and min_height < rect[1][1] < max_height: 
+            cv2.drawContours(rectangle, [box], 0, (0, 0, 255), 2)
+            bounding_boxes.append(rect)
+    return edge_image, rectangle, bounding_boxes
+
+def draw_coordinates(image):
+    bounding_boxes=[]
+    _, ROI, bounding_boxes =draw_rectangle(image,min_height=340,max_height=360,min_width=560,max_width=590)
+    for box in bounding_boxes:
+        (x,y), (w,h), theta = box
+    orion = (int(x),int(y+h/2))
+
+    return ROI, orion
+
+def draw_board(image):
+    bounding_boxes=[]
+    _, board, bounding_boxes =draw_rectangle(image,min_height=175,max_height=180,min_width=175,max_width=180)
+    for box in bounding_boxes:
+        (x,y), (w,h), theta = box
+    center_of_rotation = (x,y)
+
+    squares=[]
+    scale_center = 0.31633
+    scale_square = 0.25
+    square_sidelength = (round(scale_square*(w+h)/2),round(scale_square*(w+h)/2))
+    square_center = round(scale_center*(w+h)/2)
     
-    edge_image = cv2.Canny(dst, threshold1=50, threshold2=255)
+    squares.append([(x - square_center, y - square_center), square_sidelength, theta])
+    squares.append([(x, y - square_center), square_sidelength, theta])
+    squares.append([(x + square_center, y - square_center), square_sidelength, theta])
+    squares.append([(x - square_center, y), square_sidelength, theta])
+    squares.append([(x, y), square_sidelength, theta])
+    squares.append([(x + square_center, y), square_sidelength, theta])
+    squares.append([(x - square_center, y + square_center), square_sidelength, theta])
+    squares.append([(x, y + square_center), square_sidelength, theta])
+    squares.append([(x + square_center, y + square_center), square_sidelength, theta])
+    
+    
+    
+    for square in squares:
+        rotated_points = []
+        for point in square[0]:
+            dx = point[0] - center_of_rotation[0]
+            dy = point[1] - center_of_rotation[1]
+            rotated_x = int(center_of_rotation[0] + dx * np.cos(theta) - dy * np.sin(theta))
+            rotated_y = int(center_of_rotation[1] + dx * np.sin(theta) + dy * np.cos(theta))
+            rotated_points.append([rotated_x, rotated_y])
 
-    lines = cv2.HoughLines(edge_image, rho=1, theta=np.pi/180, threshold=100)
+        rotated_square = [rotated_points, square[1], square[2]]
+        box = cv2.boxPoints(tuple(rotated_square))
+        box = np.int0(box)
+        cv2.drawContours(board, [box], 0, (0, 0, 255), 2)
 
-    if lines is not None:
-        # Group similar lines together based on rho and theta
-        grouped_lines = group_lines(lines)
-
-        # Calculate the average line for each group
-        average_lines = [average_line(group, dst) for group in grouped_lines]
-
-        for line in lines:
-            rho, theta = line[0][0], line[0][1]
-            a, b = np.cos(theta), np.sin(theta)
-            x0, y0 = a * rho, b * rho
-            if not np.isinf(a) and not np.isinf(b) and b != 0:
-                x1, y1 = int(x0 + 1000 * (-b)), int(y0 + 1000 * (a))
-                x2, y2 = int(x0 - 1000 * (-b)), int(y0 - 1000 * (a))
-            elif not np.isinf(a):
-                x1, y1 = int(x0), 0
-                x2, y2 = int(x0), dst.shape[0] - 1
-            else:
-                x1, y1 = 0, int(y0)
-                x2, y2 = dst.shape[1] - 1, int(y0)
-
-            cv2.line(cdst, (x1, y1), (x2, y2), (0, 0, 255), 2)
-
-        for (avg_rho, avg_theta), (avg_x1, avg_y1), (avg_x2, avg_y2) in average_lines:
-            # Use np.clip to ensure that coordinates are within the valid range
-            avg_x1 = int(np.clip(avg_x1, 0, dst.shape[1] - 1))
-            avg_y1 = int(np.clip(avg_y1, 0, dst.shape[0] - 1))
-            avg_x2 = int(np.clip(avg_x2, 0, dst.shape[1] - 1))
-            avg_y2 = int(np.clip(avg_y2, 0, dst.shape[0] - 1))
-
-            cv2.line(dst, (avg_x1, avg_y1), (avg_x2, avg_y2), (0, 0, 255), 2)
-
-    return dst, cdst
-
+    return board
 
 def find_white_elements(image):
     src = np.copy(image)
@@ -203,22 +161,24 @@ def find_white_circles(binary_image, radius_threshold):
 
     return white_circles_BGR
 
-image = get_from_webcam()
-#image = get_from_file('image.jpeg')
-image_cm = from_pixel_to_cm(image, 8.648)
-white_elements = find_white_elements(image)
-#white_circles_BGR = find_white_circles(image, RADIUS_THRESH)
-#AoI_result = find_area_of_interest(image)
-dst, cdst = draw_lines(image)
-#resized_image = resize_image(image)
-print("Pixel", image.shape)
-print("cm", image_cm)
-#white_elements = find_white_elements(resized_image)
-#yellow_elements = find_yellow_elements(resized_image)
-#red_elements = find_red_elements(resized_image)
-cv2.imshow("Det original billede", image)
-#cv2.imshow("Bolle", white_circles_BGR)
-#cv2.imwrite('image12.jpeg', image)
-#cv2.imshow('black_elements', black_elements)
-cv2.imshow('white_elements', white_elements)
+image = get_from_webcam().astype(float)
+image2 = get_from_file('baggrund.jpeg').astype(float)
+foto= np.abs(image2-image).astype(np.uint8)
+
+#image_cm = from_pixel_to_cm(image, 8.648)
+#white_elements = find_white_elements(image)
+
+#edge_image, rectangle, bounding_boxes = draw_rectangle(image,min_height=0,max_height=480,min_width=0,max_width=640)
+#ROI, orion = draw_coordinates(image)
+#board = draw_board(image)
+#print("Pixel", image.shape)
+#print("cm", image_cm)
+#print("orion", orion)
+
+#cv2.imshow("Det original billede", image)
+#cv2.imshow('edge', edge_image)
+cv2.imshow("Rectangles", foto)
+#cv2.imshow('ROI', ROI)
+#cv2.imshow("board", board)
+#cv2.imwrite('.jpeg', image)
 cv2.waitKey(0)
