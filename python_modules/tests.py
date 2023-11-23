@@ -68,16 +68,42 @@ def displayContour(cnt):
     displayImg(img, killafter=0)
 
 
-def displayImg(img, name = "img", destroyOtherWindows = True, killafter = 800):
+def displayImg(img, name = "img", destroyOtherWindows = True, killafter = 0):
     if(destroyOtherWindows): cv2.destroyAllWindows()
     cv2.namedWindow(name)        # Create a named window
     cv2.moveWindow(name, 40,30)  # Move it to (40,30)
     cv2.imshow(name, img)
     cv2.waitKey(killafter)
 
+def find_circles_hough(image, debug=False):
+    gray = get_gray_image(image)
+    canvas = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+    hough_circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, 30,
+    param1 = 50, param2=30, minRadius = 20, maxRadius=33 )
+    #print(hough_circles)
+    print(hough_circles.shape)
+    print(hough_circles[0][0])
+    count = 0
+    circles = []
 
-def process_img(path, black_thresh):
-    img = get_from_file(path)
+    for circle in hough_circles[0]:
+        count += 1
+        print(circle)
+        center = int(circle[0]), int(circle[1])
+        radius = circle[2]
+        if(18 < radius < 40):
+            if debug:
+                cv2.circle(canvas, center, radius, (0, 255, 0), 2)
+            circles.append((center, radius))
+    if debug:
+        displayImg(canvas)
+    print("Found: ", count, " circles.")
+    return circles
+
+
+
+def find_circles_adaptive(image):
+    img = image.copy()
     displayImg(img, killafter=0)
     gray = get_gray_image(img)
     blur = cv2.medianBlur(gray, 15)
@@ -85,8 +111,6 @@ def process_img(path, black_thresh):
     t2 = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
     t3 = cv2.adaptiveThreshold(get_gray_image(thresh), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 5, 3)
     # displayImg(t3, killafter=0)
-
-
 
     # displayImg(thresh, "thresholded")
     # Morph open 
@@ -101,24 +125,10 @@ def process_img(path, black_thresh):
     displayImg(t2, "adaptiveThresh", killafter=0)
     displayImg(o2, "adaptiveOpened", killafter=0)
 
-    img_contours , contours, hierarchy = cv2.findContours(o2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    contour_result = img_contours.copy()
+    contours, hierarchy = cv2.findContours(o2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contour_result = o2.copy()
     contour_result = cv2.cvtColor(contour_result, cv2.COLOR_GRAY2BGR)
     i = 0
-
-
-    hough_circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, 30,
-    param1 = 50, param2=30, minRadius = 20, maxRadius=33 )
-    print(hough_circles)
-    print(hough_circles.shape)
-    print(hough_circles[0][0])
-    for circle in hough_circles[0]:
-        print(circle)
-        center = int(circle[0]), int(circle[1])
-        radius = circle[2]
-        if(18 < radius < 40):
-            cv2.circle(contour_result, center, radius, (0, 255, 0), 2)
-
 
     for contour in contours:
         
@@ -174,7 +184,13 @@ thresh = start_black_thresh
 #for i in range(5):
 #    process_img(img_path, thresh)
 #    thresh += 5
-process_img(img_path, thresh)
+# process_img(img_path, thresh)
+
+image = get_from_file(img_path)
+circles = find_circles_hough(image, debug=True)
+# Print coordinates of circle center
+for c in circles:
+    print(c[0])
 
 # all_imgs = os.listdir(img_path)
 # for img in all_imgs:
