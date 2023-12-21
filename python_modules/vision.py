@@ -282,9 +282,20 @@ def find_pieces(image):
     crosses =[np.int0((0,0,0,0))]
     for contour in contours:
         rect = cv2.minAreaRect(contour) 
+        print(rect)
+        #if (30 < rect[1][0] < 45) and (60 < rect[1][1] < 90):
+        #    rect[1][1] = rect[1][1]/2
+        #    rect[0][1] = rect[0][1]+(rect[1][1]/2)
+        #    rect = ((rect[0][0], rect[0][1]), (rect[1][0], rect[1][1]), rect[2])
+        #if 60 < rect[1][0] < 90 and 30 < rect[1][1] < 45:
+        #    rect[1][0] = rect[1][0]/2
+        #    rect[0][0] = rect[0][0]+(rect[1][0]/2)
+        #    rect = ((rect[0][0], rect[0][1]), (rect[1][0], rect[1][1]), rect[2])
         box = cv2.boxPoints(rect) 
         box = np.int0(box)
-        #cv2.drawContours(dst_image, [box], 0, (255, 0, 0), 2)
+        cv2.drawContours(dst_image, [box], 0, (255, 0, 0), 2)
+        
+        
         if 30 < rect[1][0] < 45 and 30 < rect[1][1] < 45: 
             (x1, y1), (x2, y2), (x3, y3), (x4, y4) = box
             is_cross = False
