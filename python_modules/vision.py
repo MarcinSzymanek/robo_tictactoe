@@ -161,12 +161,12 @@ def find_edges(image,blur_kernel,threshold,color,erode_iterations,dilate_iterati
         eroded_edges = threshold
     else: 
         eroded_edges = cv2.erode(threshold, kernel, erode_iterations)
-        cv2.imshow('eroded_edges', eroded_edges)
+        #cv2.imshow('eroded_edges', eroded_edges)
     if dilate_iterations == 0:
         dilated_edges = eroded_edges
     else:
         dilated_edges = cv2.dilate(eroded_edges, kernel, dilate_iterations)
-        cv2.imshow('dilated_edges', dilated_edges)
+        #cv2.imshow('dilated_edges', dilated_edges)
     edge_image = cv2.Canny(dilated_edges, canny_thres1, canny_thres2)
     return grey_image, edge_image, dst_image
 
@@ -337,7 +337,6 @@ def find_pieces_on_board(squares,o_pieces,x_pieces):
 def from_image_to_coordinates(image,x,y):
     h = image.shape[0]
     w = image.shape[1]
-    print(h,w)
     if x < (w/2):
         y_coordinate = -(x-(w/2))
     elif x > (w/2):
@@ -365,10 +364,23 @@ src = np.abs(img-ref).astype(np.uint8)
 pieces, o_pieces, x_pieces = find_pieces(src)
 cv2.imshow('Image - piecses', pieces)
 board, squares = draw_board(src)
-cv2.imshow('Board',board)
+#cv2.imshow('Board',board)
 tic_tac_toe_board = find_pieces_on_board(squares,o_pieces,x_pieces)
 
-#x_coordinate, y_coordinate = from_image_to_coordinates(src,60,342)
+print(o_pieces)
+for o_piece in o_pieces:
+    x_coordinate, y_coordinate = from_image_to_coordinates(pieces,o_piece[0],o_piece[1])
+    print(x_coordinate,y_coordinate)
+print(x_pieces)
+for x_piece in x_pieces:
+    x_coordinate, y_coordinate = from_image_to_coordinates(pieces,x_piece[0],x_piece[1])
+    print(x_coordinate,y_coordinate)
+
+for square in squares:
+    print('byte:',square[0][0],square[0][1])
+    x_coordinate, y_coordinate = from_image_to_coordinates(board,square[0][0],square[0][1])
+    print('x and y',x_coordinate,y_coordinate)
+
 #print(x_coordinate,y_coordinate)
 #x_coordinate_m, y_coordinate_m = from_pixel_to_m_coordinates(8,x_coordinate,y_coordinate)
 #print(x_coordinate_m,y_coordinate_m)
