@@ -78,10 +78,7 @@ def invkin(xyz):
 		None
 
 	# Calculate q2 
-	cosD4 = (d4**2-a2**2-((xc**2+yc**2)+zc**2))/(-2*a2*math.sqrt((xc**2+yc**2)+zc**2))
-	D4 = math.atan2(math.sqrt(abs(1-cosD4**2)),cosD4)
-	alpha = math.atan2(zc,math.sqrt(xc**2+yc**2))
-	q2 = (alpha+D4)-math.pi/2
+	q2 = math.atan2(zc,math.sqrt(xc**2+yc**2))-math.atan2((d4*math.sin(q3)),(a2+d4*math.cos(q3)))-math.pi/2
 
 	if (q2 > 2.05):
 		q2 = 2.05

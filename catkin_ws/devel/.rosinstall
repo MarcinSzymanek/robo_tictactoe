@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/ros/repo/robo_tictactoe/catkin_ws/devel/setup.sh

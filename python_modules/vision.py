@@ -279,50 +279,87 @@ def find_pieces(image):
             o_pieces.append([i[0],i[1]])
     _, contours, _ = cv2.findContours(edge_image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     bounding_boxes = []
+    boxes = []
+    rectangles = []
     crosses =[np.int0((0,0,0,0))]
     for contour in contours:
-        rect = cv2.minAreaRect(contour) 
-        print(rect)
-        #if (30 < rect[1][0] < 45) and (60 < rect[1][1] < 90):
-        #    rect[1][1] = rect[1][1]/2
-        #    rect[0][1] = rect[0][1]+(rect[1][1]/2)
-        #    rect = ((rect[0][0], rect[0][1]), (rect[1][0], rect[1][1]), rect[2])
-        #if 60 < rect[1][0] < 90 and 30 < rect[1][1] < 45:
-        #    rect[1][0] = rect[1][0]/2
-        #    rect[0][0] = rect[0][0]+(rect[1][0]/2)
-        #    rect = ((rect[0][0], rect[0][1]), (rect[1][0], rect[1][1]), rect[2])
-        box = cv2.boxPoints(rect) 
-        box = np.int0(box)
-        cv2.drawContours(dst_image, [box], 0, (255, 0, 0), 2)
+        rect = cv2.minAreaRect(contour)
+
+        if (30 < rect[1][0] < 50) and (60 < rect[1][1] < 100):
+                # Split the rectangle into two parts
+            rect1 = ((rect[0][0], rect[0][1] + rect[1][1]/4), (rect[1][0], rect[1][1]/2), rect[2])
+            rect2 = ((rect[0][0], rect[0][1] - rect[1][1]/4), (rect[1][0], rect[1][1]/2), rect[2])
+            rectangles.append(rect1)
+            rectangles.append(rect2)
+        
+                # Draw the first part
+            box1 = cv2.boxPoints(rect1)
+            box1 = np.int0(box1)
+            boxes.append(box1)
+                #cv2.drawContours(dst_image, [box1], 0, (255, 0, 0), 2)
+
+                # Draw the second part
+            box2 = cv2.boxPoints(rect2)
+            box2 = np.int0(box2)
+            boxes.append(box2)
+            #cv2.drawContours(dst_image, [box2], 0, (255, 0, 0), 2)
+
+        elif (60 < rect[1][0] < 100) and (30 < rect[1][1] < 50):
+                # Split the rectangle into two parts
+            rect1 = ((rect[0][0] + rect[1][0]/4, rect[0][1]), (rect[1][0]/2, rect[1][1]), rect[2])
+            rect2 = ((rect[0][0] - rect[1][0]/4, rect[0][1]), (rect[1][0]/2, rect[1][1]), rect[2])
+            rectangles.append(rect1)
+            rectangles.append(rect2)
+                # Draw the first part
+            box1 = cv2.boxPoints(rect1)
+            box1 = np.int0(box1)
+            boxes.append(box1)
+                #cv2.drawContours(dst_image, [box1], 0, (255, 0, 0), 2)
+
+                # Draw the second part
+            box2 = cv2.boxPoints(rect2)
+            box2 = np.int0(box2)
+            boxes.append(box2)
+                #cv2.drawContours(dst_image, [box2], 0, (255, 0, 0), 2)
+
+        else:
+                # Draw the original rectangle
+            rectangles.append(rect)
+            box = cv2.boxPoints(rect)
+            box = np.int0(box)
+            boxes.append(box)
+                #cv2.drawContours(dst_image, [box], 0, (255, 0, 0), 2)
         
         
-        if 30 < rect[1][0] < 45 and 30 < rect[1][1] < 45: 
-            (x1, y1), (x2, y2), (x3, y3), (x4, y4) = box
-            is_cross = False
-            is_circle = False
-            for cross in crosses:
-                if (rect[0][0] >= cross[0] and rect[0][0] <= cross[1]) and (rect[0][1] >= cross[2] and rect[0][1] <= cross[3]):
-                    is_cross = True
-                    break
-            if circles is None:
-                None
-            else:
-                for i in circles[0,:]:
-                    if (rect[0][0] >= (i[0]-i[2]) and rect[0][0] <= (i[0]+i[2])) and (rect[0][1] >= (i[1]-i[2]) and rect[0][1] <= (i[1]+i[2])):
-                        is_circle = True
-                    cv2.circle(dst_image,(i[0],i[1]),i[2],(0,255,0),2)
-                
-            if not is_cross and not is_circle:
-                x_min = np.min([x1, x2, x3, x4])
-                x_max = np.max([x1, x2, x3, x4])
-                y_min = np.min([y1, y2, y3, y4])
-                y_max = np.max([y1, y2, y3, y4])
-                crosses.append((x_min, x_max, y_min, y_max))
-                box = (x1,y1),(x2,y2),(x3,y3),(x4,y4)
-                box = np.int0(box)
-                cv2.drawContours(dst_image, [box], 0, (0, 0, 255), 2)
-                bounding_boxes.append(rect)
-                x_pieces.append([np.int0(rect[0][0]),np.int0(rect[0][1])])
+        for recta in rectangles:
+            for boxe in boxes:
+                if 30 < recta[1][0] < 50 and 30 < recta[1][1] < 50: 
+                    (x1, y1), (x2, y2), (x3, y3), (x4, y4) = boxe
+                    is_cross = False
+                    is_circle = False
+                    for cross in crosses:
+                        if (recta[0][0] >= cross[0] and recta[0][0] <= cross[1]) and (recta[0][1] >= cross[2] and recta[0][1] <= cross[3]):
+                            is_cross = True
+                            break
+                    if circles is None:
+                        None
+                    else:
+                        for i in circles[0,:]:
+                            if (recta[0][0] >= (i[0]-i[2]) and recta[0][0] <= (i[0]+i[2])) and (recta[0][1] >= (i[1]-i[2]) and recta[0][1] <= (i[1]+i[2])):
+                                is_circle = True
+                            cv2.circle(dst_image,(i[0],i[1]),i[2],(0,255,0),2)
+                        
+                    if not is_cross and not is_circle:
+                        x_min = np.min([x1, x2, x3, x4])
+                        x_max = np.max([x1, x2, x3, x4])
+                        y_min = np.min([y1, y2, y3, y4])
+                        y_max = np.max([y1, y2, y3, y4])
+                        crosses.append((x_min, x_max, y_min, y_max))
+                        boxe = (x1,y1),(x2,y2),(x3,y3),(x4,y4)
+                        boxe = np.int0(boxe)
+                        cv2.drawContours(dst_image, [boxe], 0, (0, 0, 255), 2)
+                        bounding_boxes.append(recta)
+                        x_pieces.append([np.int0(recta[0][0]),np.int0(recta[0][1])])
     return dst_image, o_pieces, x_pieces
 
 def find_pieces_on_board(squares,o_pieces,x_pieces):
@@ -348,13 +385,8 @@ def find_pieces_on_board(squares,o_pieces,x_pieces):
 def from_image_to_coordinates(image,x,y):
     h = image.shape[0]
     w = image.shape[1]
-    if x < (w/2):
-        y_coordinate = -(x-(w/2))
-    elif x > (w/2):
-        y_coordinate = -(x-(w/2))
-    else:
-        y_coordinate = 0
-    x_coordinate = -(y-h)
+    x_coordinate = x-(w/2)
+    y_coordinate = h-y
     return x_coordinate, y_coordinate
 
 #image = get_from_webcam()
@@ -377,20 +409,22 @@ cv2.imshow('Image - piecses', pieces)
 board, squares = draw_board(src)
 #cv2.imshow('Board',board)
 tic_tac_toe_board = find_pieces_on_board(squares,o_pieces,x_pieces)
-
+h = src.shape[0]
+w = src.shape[1]/2
+print(w,h)
 print(o_pieces)
 for o_piece in o_pieces:
     x_coordinate, y_coordinate = from_image_to_coordinates(pieces,o_piece[0],o_piece[1])
     print(x_coordinate,y_coordinate)
-print(x_pieces)
-for x_piece in x_pieces:
-    x_coordinate, y_coordinate = from_image_to_coordinates(pieces,x_piece[0],x_piece[1])
-    print(x_coordinate,y_coordinate)
-
-for square in squares:
-    print('byte:',square[0][0],square[0][1])
-    x_coordinate, y_coordinate = from_image_to_coordinates(board,square[0][0],square[0][1])
-    print('x and y',x_coordinate,y_coordinate)
+#print(x_pieces)
+#for x_piece in x_pieces:
+#    x_coordinate, y_coordinate = from_image_to_coordinates(pieces,x_piece[0],x_piece[1])
+#    print(x_coordinate,y_coordinate)
+#
+#for square in squares:
+#    print('byte:',square[0][0],square[0][1])
+#    x_coordinate, y_coordinate = from_image_to_coordinates(board,square[0][0],square[0][1])
+#    print('x and y',x_coordinate,y_coordinate)
 
 #print(x_coordinate,y_coordinate)
 #x_coordinate_m, y_coordinate_m = from_pixel_to_m_coordinates(8,x_coordinate,y_coordinate)
