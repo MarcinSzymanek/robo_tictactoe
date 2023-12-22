@@ -332,8 +332,8 @@ def find_pieces(image):
         
         
         for recta in rectangles:
-            for boxe in boxes:
-                if 30 < recta[1][0] < 50 and 30 < recta[1][1] < 50: 
+            if 30 < recta[1][0] < 50 and 30 < recta[1][1] < 50: 
+                for boxe in boxes:
                     (x1, y1), (x2, y2), (x3, y3), (x4, y4) = boxe
                     is_cross = False
                     is_circle = False

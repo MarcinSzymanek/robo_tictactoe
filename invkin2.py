@@ -34,6 +34,8 @@ def invkin(xyz):
 	zc = oc[2]-d1
 	direction = 0
 	
+	if x == 0:
+		x = 0.01
 	# Calculate q1
 	if (xc > 0) & (yc > 0):
 		q1 = math.atan2(yc, xc)-math.pi/2
@@ -51,6 +53,8 @@ def invkin(xyz):
 		q1 = -math.pi/2
 	elif (xc < 0) & (yc == 0):
 		q1 = math.pi/2
+	elif (xc == 0) & (yc == 0):
+		q1 = 0
 
 	if (q1 > (5*math.pi/6)):
 		q1 = q1-math.pi 
