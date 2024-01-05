@@ -1,0 +1,9 @@
+<launch>
+<node name="robobrain" pkg="tic_tac_toebot" type="robobrain_launcher.py" 
+required="true" output="screen">
+</node>
+<node name="manual_arm_ctrl" pkg="tic_tac_toebot" type="test_arm_control.py" 
+required="false" output="screen">
+</node>
+
+</launch>

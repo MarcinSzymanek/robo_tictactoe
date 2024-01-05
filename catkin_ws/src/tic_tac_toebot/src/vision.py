@@ -344,11 +344,11 @@ def from_image_to_coordinates(image,x,y):
     y_coordinate = h-y
     return x_coordinate, y_coordinate
 
-# image = get_from_webcam()
+image = get_from_webcam()
 #cv2.imwrite('images/baggrund2.jpeg', image_ref)
-image_ref = get_from_file('images/baggrund.jpeg')
+image_ref = get_from_file('images/baggrund2.jpeg')
 #cv2.imshow('reference image', image_ref)
-image = get_from_file('images/game1.jpeg')
+#image = get_from_file('images/game1.jpeg')
 cv2.imshow('image', image)
 regionOfInterest, (xc,yc), (x_start, y_start), (x_end, y_end), theta = draw_regionOfInterest(image_ref)
 #cv2.imshow('Region of interest reference image', regionOfInterest)
