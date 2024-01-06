@@ -9,13 +9,8 @@ from control_msgs.msg import FollowJointTrajectoryGoal
 from trajectory_msgs.msg import JointTrajectoryPoint
 from trajectory_msgs.msg import JointTrajectory
 import math
-import moveit_commander
-import moveit_msgs
-import geometry_msgs
-import math
-from math import pi
-from moveit_commander.conversions import pose_to_list
 
+from math import pi
 class ArmController:
     N_JOINTS = 4
     def __init__(self):
