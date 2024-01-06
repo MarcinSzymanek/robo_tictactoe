@@ -252,6 +252,8 @@ def draw_board(src):
                 cv2.drawContours(board, [box], 0, (0, 0, 255), 2)
                 #print(square)
 
+    
+
     return board, squares
 
 
@@ -269,13 +271,15 @@ def find_pieces(image):
     crosses =[np.int0((0,0,0,0))]
     detected_circles = cv2.HoughCircles(edge_image, cv2.HOUGH_GRADIENT, 1.5, 10, param1 = 50, param2 = 25, minRadius = 18, maxRadius = 22) 
     if detected_circles is None:
-        circles = 0
+        circles = []
         print('No O-markers are found')
     else:
         circles = np.uint16(np.around(detected_circles))
-        for i in circles[0,:]:
-            cv2.circle(dst_image,(i[0],i[1]),i[2],(0,255,0),2)
-            o_pieces.append([i[0],i[1]])        
+        if len(circles) > 0:
+            for i in circles[0,:]:
+                print(i)
+                cv2.circle(dst_image,(i[0],i[1]),i[2],(0,255,0),2)
+                o_pieces.append([i[0],i[1]])        
     _, contours, _ = cv2.findContours(edge_image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     for contour in contours:
         rect = cv2.minAreaRect(contour)
@@ -298,12 +302,17 @@ def find_pieces(image):
         if 30 < recta[1][0] < 50 and 30 < recta[1][1] < 50: 
             is_cross = False
             is_circle = False
+            
             for cross in crosses:
                 if (recta[0][0] >= cross[0] and recta[0][0] <= cross[1]) and (recta[0][1] >= cross[2] and recta[0][1] <= cross[3]):
                     is_cross = True
-            for i in circles[0, :]:
-                if ((recta[0][0] >= (i[0] - i[2]) and recta[0][0] <= (i[0] + i[2])) and (recta[0][1] >= (i[1] - i[2]) and recta[0][1] <= (i[1] + i[2]))):
-                    is_circle = True
+            if len(circles) > 0:
+                for i in circles[0, :]:
+                    
+
+                    if ((recta[0][0] >= (i[0] - i[2]) and recta[0][0] <= (i[0] + i[2])) and (recta[0][1] >= (i[1] - i[2]) and recta[0][1] <= (i[1] + i[2]))):
+                        is_circle = True
+                    
             box = cv2.boxPoints(recta)
             box = np.int0(box)
             (x1, y1), (x2, y2), (x3, y3), (x4, y4) = box
@@ -314,28 +323,50 @@ def find_pieces(image):
                 y_max = np.max([y1, y2, y3, y4])
                 crosses.append((x_min, x_max, y_min, y_max))
                 cv2.drawContours(dst_image, [box], 0, (0, 0, 255), 2)
+                piece = [np.int0(recta[0][0]), np.int0(recta[0][1])]
+
                 x_pieces.append([np.int0(recta[0][0]),np.int0(recta[0][1])])
+        
+    print("o_pieces count: ", len(o_pieces))
+    print("x_pieces count: ", len(x_pieces))
     return dst_image, o_pieces, x_pieces
 
 def get_board_state(squares,o_pieces,x_pieces):
     tic_tac_toe_board = np.array([[' ',' ',' '],
                         [' ',' ',' '],
                         [' ',' ',' ']])
+    
+    empty_squares_list = []
+    o_on_board_list = []
+    x_on_board_list = []
     for square in squares:
+        print("square:", square[0])
+        empty_squares_list.append(square[0])
         for o_piece in o_pieces:
             if (o_piece[0] >= (square[0][0]-(square[1][0]//2)) and o_piece[0] <= (square[0][0]+(square[1][0]//2))) and (o_piece[1] >= (square[0][1]-(square[1][1]//2)) and o_piece[1] <= (square[0][1]+(square[1][1]//2))):
                 row = squares.index(square) // 3
                 col = squares.index(square) % 3
                 tic_tac_toe_board[row][col] = 'O'
+                o_on_board_list.append(o_piece)
+                if square[0] in empty_squares_list:
+                    empty_squares_list.remove(square[0])   
         for x_piece in x_pieces:
             if (x_piece[0] >= (square[0][0]-(square[1][0]//2)) and x_piece[0] <= (square[0][0]+(square[1][0]//2))) and (x_piece[1] >= (square[0][1]-(square[1][1]//2)) and x_piece[1] <= (square[0][1]+(square[1][1]//2))):
                 row = squares.index(square) // 3
                 col = squares.index(square) % 3
                 tic_tac_toe_board[row][col] = 'X'
-    print(tic_tac_toe_board[0])
-    print(tic_tac_toe_board[1])
-    print(tic_tac_toe_board[2])
-    return tic_tac_toe_board
+                x_on_board_list.append(x_piece)
+                if square[0] in empty_squares_list:
+                    empty_squares_list.remove(square[0])
+                
+    # print(tic_tac_toe_board[0])
+    # print(tic_tac_toe_board[1])
+    # print(tic_tac_toe_board[2])
+    print(tic_tac_toe_board)
+    print(empty_squares_list)
+    print(o_on_board_list)
+    print(x_on_board_list)
+    return tic_tac_toe_board, empty_squares_list, o_on_board_list, x_on_board_list
 
 def from_image_to_coordinates(image,x,y):
     h = image.shape[0]
@@ -344,25 +375,31 @@ def from_image_to_coordinates(image,x,y):
     y_coordinate = h-y
     return x_coordinate, y_coordinate
 
-# image = get_from_webcam()
-# #cv2.imwrite('images/baggrund2.jpeg', image_ref)
+def test_vision():
+    image_ref = get_from_webcam()
+    cv2.imshow("ref", image_ref)
+    cv2.waitKey(0)
+
+    image = get_from_webcam()
+    
 # image_ref = get_from_file('images/baggrund2.jpeg')
 # #cv2.imshow('reference image', image_ref)
 # #image = get_from_file('images/game1.jpeg')
 # cv2.imshow('image', image)
-# regionOfInterest, (xc,yc), (x_start, y_start), (x_end, y_end), theta = draw_regionOfInterest(image_ref)
+    regionOfInterest, (xc,yc), (x_start, y_start), (x_end, y_end), theta = draw_regionOfInterest(image_ref)
 # #cv2.imshow('Region of interest reference image', regionOfInterest)
-# regionOfInterest2 = crop_image(image,xc,yc,x_start,y_start,x_end,y_end,theta)
+    regionOfInterest2 = crop_image(image,xc,yc,x_start,y_start,x_end,y_end,theta)
 # #cv2.imshow('Region of interest image', regionOfInterest2)
-# ref = regionOfInterest.astype(float)
-# img = regionOfInterest2.astype(float)
-# src = np.abs(img-ref).astype(np.uint8)
+    ref = regionOfInterest.astype(float)
+    img = regionOfInterest2.astype(float)
+    src = np.abs(img-ref).astype(np.uint8)
 # #cv2.imshow('source image', src)
 # #clear_difference = get_clear_difference(src,5)
 # #_, edge_image, _ = find_edges(clear_difference,40,255,1,2,50,150)
 # #cv2.imshow('Image - clear', edge_image)
-# pieces, o_pieces, x_pieces = find_pieces(src)
-# cv2.imshow('Pieces', pieces)
+    pieces, o_pieces, x_pieces = find_pieces(src)
+    cv2.imshow('Pieces', pieces)
+    cv2.waitKey(0)
 # board, squares = draw_board(src)
 # cv2.imshow('Board',board)
 # tic_tac_toe_board = find_pieces_on_board(squares,o_pieces,x_pieces)
@@ -390,4 +427,3 @@ def from_image_to_coordinates(image,x,y):
 #print(x_coordinate,y_coordinate)
 #x_coordinate_m, y_coordinate_m = from_pixel_to_m_coordinates(8,x_coordinate,y_coordinate)
 #print(x_coordinate_m,y_coordinate_m)
-cv2.waitKey(0)

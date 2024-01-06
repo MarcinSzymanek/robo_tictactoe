@@ -20,9 +20,10 @@ from robobrain import Robobrain
 class RoboBrainNode():
     def __init__(self):
         self.brain = Robobrain()
-        self.display_traj_publisher = rospy.Publisher("/move_group/display_planned_path",
-                                                      moveit_msgs.msg.DisplayTrajectory,
-                                                      queue_size=20)
+        # self.display_traj_publisher = rospy.Publisher("/move_group/display_planned_path",
+        #                                               moveit_msgs.msg.DisplayTrajectory,
+        #                                               queue_size=20)
+        
         print("Robobrain activated")
 
     def onGameStart(self, val):
@@ -30,11 +31,11 @@ class RoboBrainNode():
         print("HAHA I START")
         rospy.loginfo("Game start signal received")
 
-    def moveTo(self, moveToMsg):
-        x, y, z = moveToMsg.x, moveToMsg.y, moveToMsg.z
-        print(x, " ",y , " ", z)
+    # def moveTo(self, moveToMsg):
+    #     x, y, z = moveToMsg.x, moveToMsg.y, moveToMsg.z
+    #     print(x, " ",y , " ", z)
         
-        self.brain.moveTo([[x, y, z]])
+    #     self.brain.moveTo([[x, y, z]])
         
 
 if __name__ == "__main__":

@@ -32,10 +32,11 @@ class ArmController:
 
       self.client.wait_for_result()
       print self.client.get_result()
-      print("Done sending positions")
+      print("Arm::Done sending positions")
 
 
     def move_to_default(self):
+      print("Arm::Move to default")
       joint_positions = [
     		[0,  0, 0, 0]
 		  ]
@@ -45,7 +46,7 @@ class ArmController:
       # construct a list of joint positions
       for p in joint_positions:
         jtp = JointTrajectoryPoint(positions=p,velocities=[0.5]*self.N_JOINTS ,time_from_start=dur)
-        dur += rospy.Duration(1)
+        #dur += rospy.Duration(1)
         self.joint_positions.append(jtp)
 
       self.jt = JointTrajectory(joint_names=self.names, points=self.joint_positions)
@@ -53,10 +54,10 @@ class ArmController:
       self.send_positions_()
 
     # Note: This actually sets several trajectories in a list
-    def set_goal(self, xyzpositions, velocities=0.2):
+    def set_goal(self, xyzpositions, velocities=0.5, duration = 1):
       print("arm controller set goal")
       print(xyzpositions)
-      dur = rospy.Duration(0.2)
+      dur = rospy.Duration(duration)
 
       for p in xyzpositions:
         inv = self.invkin(p)
@@ -74,7 +75,7 @@ class ArmController:
         self.joint_positions = [jtp]
           
       self.jt = JointTrajectory(joint_names=self.names, points=self.joint_positions)
-      self.goal = FollowJointTrajectoryGoal( trajectory = self.jt, goal_time_tolerance=rospy.Duration(0.2))
+      self.goal = FollowJointTrajectoryGoal( trajectory = self.jt, goal_time_tolerance=rospy.Duration(1))
       self.send_positions_()  
 
     def invkin(self, xyz):
@@ -90,13 +91,13 @@ class ArmController:
       d1 = 16.7 # cm (height of 2nd joint)
       a1 = 5.5 # (distance along "y-axis" to 2nd joint)
       a2 = 17.3 # (distance between 2nd and 3rd joints)
-      d4 = 15.0 # (distance from 3rd joint to gripper center - all inclusive, ie. also 4th joint)
+      d4 = 21.5 # (distance from 3rd joint to gripper center - all inclusive, ie. also 4th joint)
 
       # Insert code here!!!
       # Calculate oc
       oc = xyz
       xc = oc[0]
-      yc = oc[1]
+      yc = oc[1]-a1
       zc = oc[2]-d1
       direction = 0
       
@@ -119,6 +120,8 @@ class ArmController:
         q1 = math.pi/2
       elif (xc == 0) & (yc == 0):
         q1 = 0
+      if (q1 > 0):
+        q1=q1-0.04
 
       if (q1 > (5*math.pi/6)):
         q1 = q1-math.pi 
@@ -128,7 +131,15 @@ class ArmController:
         direction = 1
       else:
         None
-
+      if 10 > math.sqrt(xc**2+yc**2) and math.sqrt(xc**2+yc**2) > 0:
+        xc = oc[0]+3
+        yc = oc[1]-a1+3
+      elif 20 > math.sqrt(xc**2+yc**2) and math.sqrt(xc**2+yc**2) >= 10:
+        xc = oc[0]+1.5
+        yc = oc[1]-a1+1.5
+      elif 30 > math.sqrt(xc**2+yc**2) and math.sqrt(xc**2+yc**2) >= 20:
+        xc = oc[0]
+        yc = oc[1]-a1 
       # Calculate q3 
       cosXY = (((xc**2+yc**2)+zc**2)-a2**2-d4**2)/(-2*a2*d4)
       q3 = -(math.pi-math.atan2(math.sqrt(abs(1-cosXY**2)),cosXY))
@@ -144,7 +155,8 @@ class ArmController:
         q3 = -q3
       else: 
         None
-
+      xc = oc[0]
+      yc = oc[1]-a1
       # Calculate q2 
       q2 = math.atan2(zc,math.sqrt(xc**2+yc**2))-math.atan2((d4*math.sin(q3)),(a2+d4*math.cos(q3)))-math.pi/2
 
