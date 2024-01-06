@@ -23,6 +23,24 @@ class GameSession:
     def clear_board(self):
         self.board_state = np.array([['', '', ''], ['', '', ''], ['', '', '']])
 
+    def set_board_state(self, board):
+        self.board_state = board
+
+    # Count number of pieces on the board and return it as a tuple (X count, O count)
+    def count_pieces(self):
+        xs = 0
+        os = 0
+        for row in self.board_state:
+            for item in row:
+                if item == 'X':
+                    xs = xs + 1
+                elif item == 'O':
+                    os = os + 1
+        print("xs count: ", xs)
+        print("os count: ", os)
+        return (xs, os)
+
+
     def update_board(self, pos, val):
         if(self.current_player != val):
             print("Player tried to place: ", val, " but it's not his turn!")

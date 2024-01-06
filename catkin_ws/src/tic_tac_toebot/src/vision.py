@@ -317,10 +317,10 @@ def find_pieces(image):
                 x_pieces.append([np.int0(recta[0][0]),np.int0(recta[0][1])])
     return dst_image, o_pieces, x_pieces
 
-def find_pieces_on_board(squares,o_pieces,x_pieces):
-    tic_tac_toe_board = [[' ',' ',' '],
+def get_board_state(squares,o_pieces,x_pieces):
+    tic_tac_toe_board = np.array([[' ',' ',' '],
                         [' ',' ',' '],
-                        [' ',' ',' ']]
+                        [' ',' ',' ']])
     for square in squares:
         for o_piece in o_pieces:
             if (o_piece[0] >= (square[0][0]-(square[1][0]//2)) and o_piece[0] <= (square[0][0]+(square[1][0]//2))) and (o_piece[1] >= (square[0][1]-(square[1][1]//2)) and o_piece[1] <= (square[0][1]+(square[1][1]//2))):
@@ -344,43 +344,43 @@ def from_image_to_coordinates(image,x,y):
     y_coordinate = h-y
     return x_coordinate, y_coordinate
 
-image = get_from_webcam()
-#cv2.imwrite('images/baggrund2.jpeg', image_ref)
-image_ref = get_from_file('images/baggrund2.jpeg')
-#cv2.imshow('reference image', image_ref)
-#image = get_from_file('images/game1.jpeg')
-cv2.imshow('image', image)
-regionOfInterest, (xc,yc), (x_start, y_start), (x_end, y_end), theta = draw_regionOfInterest(image_ref)
-#cv2.imshow('Region of interest reference image', regionOfInterest)
-regionOfInterest2 = crop_image(image,xc,yc,x_start,y_start,x_end,y_end,theta)
-#cv2.imshow('Region of interest image', regionOfInterest2)
-ref = regionOfInterest.astype(float)
-img = regionOfInterest2.astype(float)
-src = np.abs(img-ref).astype(np.uint8)
-#cv2.imshow('source image', src)
-#clear_difference = get_clear_difference(src,5)
-#_, edge_image, _ = find_edges(clear_difference,40,255,1,2,50,150)
-#cv2.imshow('Image - clear', edge_image)
-pieces, o_pieces, x_pieces = find_pieces(src)
-cv2.imshow('Pieces', pieces)
-board, squares = draw_board(src)
-cv2.imshow('Board',board)
-tic_tac_toe_board = find_pieces_on_board(squares,o_pieces,x_pieces)
-h = src.shape[0]
-w = src.shape[1]
-print(w,h)
-print(o_pieces)
-for o_piece in o_pieces:
-    x_coordinate, y_coordinate = from_image_to_coordinates(pieces,o_piece[0],o_piece[1])
-    x_coordinate = x_coordinate/8.69832
-    y_coordinate = y_coordinate/8.69832
-    print(x_coordinate,y_coordinate)
-print(x_pieces)
-for x_piece in x_pieces:
-    x_coordinate, y_coordinate = from_image_to_coordinates(pieces,x_piece[0],x_piece[1])
-    x_coordinate = x_coordinate/8.69832
-    y_coordinate = y_coordinate/8.69832
-    print(x_coordinate,y_coordinate)
+# image = get_from_webcam()
+# #cv2.imwrite('images/baggrund2.jpeg', image_ref)
+# image_ref = get_from_file('images/baggrund2.jpeg')
+# #cv2.imshow('reference image', image_ref)
+# #image = get_from_file('images/game1.jpeg')
+# cv2.imshow('image', image)
+# regionOfInterest, (xc,yc), (x_start, y_start), (x_end, y_end), theta = draw_regionOfInterest(image_ref)
+# #cv2.imshow('Region of interest reference image', regionOfInterest)
+# regionOfInterest2 = crop_image(image,xc,yc,x_start,y_start,x_end,y_end,theta)
+# #cv2.imshow('Region of interest image', regionOfInterest2)
+# ref = regionOfInterest.astype(float)
+# img = regionOfInterest2.astype(float)
+# src = np.abs(img-ref).astype(np.uint8)
+# #cv2.imshow('source image', src)
+# #clear_difference = get_clear_difference(src,5)
+# #_, edge_image, _ = find_edges(clear_difference,40,255,1,2,50,150)
+# #cv2.imshow('Image - clear', edge_image)
+# pieces, o_pieces, x_pieces = find_pieces(src)
+# cv2.imshow('Pieces', pieces)
+# board, squares = draw_board(src)
+# cv2.imshow('Board',board)
+# tic_tac_toe_board = find_pieces_on_board(squares,o_pieces,x_pieces)
+# h = src.shape[0]
+# w = src.shape[1]
+# print(w,h)
+# print(o_pieces)
+# for o_piece in o_pieces:
+#     x_coordinate, y_coordinate = from_image_to_coordinates(pieces,o_piece[0],o_piece[1])
+#     x_coordinate = x_coordinate/8.69832
+#     y_coordinate = y_coordinate/8.69832
+#     print(x_coordinate,y_coordinate)
+# print(x_pieces)
+# for x_piece in x_pieces:
+#     x_coordinate, y_coordinate = from_image_to_coordinates(pieces,x_piece[0],x_piece[1])
+#     x_coordinate = x_coordinate/8.69832
+#     y_coordinate = y_coordinate/8.69832
+#     print(x_coordinate,y_coordinate)
 
 #for square in squares:
 #    print('byte:',square[0][0],square[0][1])
