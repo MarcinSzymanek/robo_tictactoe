@@ -4,7 +4,7 @@ from arm_controller import ArmController
 from grip_controller import GripController
 import traceback
 from std_msgs.msg import Float64, Bool
-from tic_tac_toebot.msg import ManualMoveTo
+from tic_tac_toebot.msg import ManualMoveTo, StartGame
 import rospy
 from time import sleep
 from vision import *
@@ -35,13 +35,14 @@ class Robobrain():
     BG_IMG_PATH = "session/baggrund.jpeg"
     START_POS = ArmPosition(0, 0, 49)
     def __init__(self):
+        print("Hello from robobrain!")
         self.state = STATES.wait_for_start
         self.session = GameSession()
         self.arm = ArmController()
         self.gripper = GripController()
         
         self.arm.move_to_default()
-        # self.arm_position = Robobrain.START_POS
+        self.arm_position = Robobrain.START_POS
         self.moveGripper(0.0)
         sleep(1)
         self.moveGripper(0.7)
@@ -50,11 +51,10 @@ class Robobrain():
 
         self.manualMoveListener = rospy.Subscriber("ManualMoveTo", ManualMoveTo, self.moveTo)
         self.manualMoveDirListener = rospy.Subscriber("ManualMoveDir", ManualMoveTo, self.moveInDirection)
-        
-        self.manualGripperListener = rospy.Subscriber("ManualGrip", Float64, self.arm.move_to_default)
+        self.manualGripperListener = rospy.Subscriber("ManualGrip", Float64, self.toggleGripper)
 
         self.gameStartListener = rospy.Subscriber("GameStart", Bool, self.onGameStart)
-        
+
         self.gameStarted = False
         # Define states and their methods
 
@@ -67,30 +67,23 @@ class Robobrain():
     
 
     def onWaitStart(self):
+        print("Waiting to start game")
         # Wait for a message that tells us to start: need to define w/ rosmsg
         # Simply put, do nothing
-
-        # test evaluate board here
-
-        # Check if the prints are correct and if the picture is saved 
         pass
 
     def onWaitTurn(self):
         self.arm.move_to_default()
         your_turn = False
         while not your_turn:
-            #try:
             # Check the board, see if player has made a move
             self.evaluateBoard()
             xs, os = self.session.count_pieces()
             # If there are more 'O' s on the board than Xs, it is our turn
             if(os > xs):
                 your_turn = True
-            # We check every 0.5 second by default
-            # except Exception as error:
-            #     print("Exception during board eval")
-            #     print(error)
-            #     pass
+            # We check every 1 second by default
+          
             sleep(1)
         self.state = self.calc_move
         self.state.act()
@@ -142,7 +135,7 @@ class Robobrain():
         self.gripper.control_(val)
         self.gripper_val = val
     
-    def onGameStart(self, start):
+    def onGameStart(self, val):
         print("robobrain::onGameStart()")
         self.session.start_new()    
         self.arm.move_to_default()
@@ -241,20 +234,3 @@ class Robobrain():
             y_coordinate = y_coordinate/8.69832
             self.x_pieces_coord.append((x_coordinate, y_coordinate))
             print(x_coordinate,y_coordinate)
-
-        
-    
-    def placePiece(self, pos):
-        # Send a message to robot movement controller with directions to the piece. 
-        # We should have a method for finding the piece itself using CV
-        # And another one for moving end effector to the piece and grabbing it
-        pass
-
-    def findPiece():
-        # This should go into CV module, probably
-        # How to communicate directions/necessary movements?
-        pass
-
-    def moveToPos(pos):
-        # Move end effector to the desired position
-        pass
